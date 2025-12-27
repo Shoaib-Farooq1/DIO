@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodge DIO's Knives!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            width: 800px;
+            height: 600px;
+            background: #1a1a1a;
+            border: 4px solid #ffd700;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Title Screen */
+        #titleScreen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            color: #ffd700;
+            text-align: center;
+            padding: 40px;
+            z-index: 200;
+            position: relative;
+        }
+
+        #titleScreen h1 {
+            font-size: 2.8em;
+            margin-bottom: 30px;
+            line-height: 1.3;
+        }
+
+        #titleScreen p {
+            font-size: 1.3em;
+            color: #fff;
+            margin-bottom: 20px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .dialogue {
+            font-size: 1.2em;
+            color: #fff;
+            margin: 10px 0;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .dialogue strong {
+            color: #ffd700;
+        }
+
+        .btn {
+            padding: 15px 50px;
+            font-size: 1.5em;
+            background: #ffd700;
+            color: #000;
+            border: 3px solid #fff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #fff;
+        }
+
+        .btn:active {
+            background: #ccc;
+        }
+
+        /* Story Screen */
+        #storyScreen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            color: #ffd700;
+            text-align: center;
+            padding: 40px;
+            z-index: 200;
+            position: relative;
+        }
+
+        #storyScreen p {
+            font-size: 1.8em;
+            color: #fff;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px #000;
+            line-height: 1.5;
+        }
+
+        /* Level Select Screen */
+        #levelSelect {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            padding: 40px;
+            z-index: 200;
+            position: relative;
+        }
+
+        #levelSelect h2 {
+            color: #ffd700;
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        .levelGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .levelCard {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #ffd700;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .levelCard:hover:not(.locked) {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .levelCard.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #666;
+        }
+
+        .levelCard.completed {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .levelCard h3 {
+            color: #ffd700;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .levelCard.locked h3 {
+            color: #666;
+        }
+
+        .levelCard.completed h3 {
+            color: #00ff00;
+        }
+
+        .levelNumber {
+            font-size: 3em;
+            color: rgba(255, 215, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .levelCard.locked .levelNumber {
+            color: rgba(102, 102, 102, 0.3);
+        }
+
+        .levelCard.completed .levelNumber {
+            color: rgba(0, 255, 0, 0.3);
+        }
+
+        .levelStatus {
+            font-size: 1em;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .levelCard.completed .levelStatus::after {
+            content: " ✓";
+            color: #00ff00;
+            font-size: 1.5em;
+        }
+
+        .levelCard.locked .levelStatus::after {
+            content: " 🔒";
+        }
+
+        /* Game Screen */
+        #gameScreen {
+            display: none;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Background Video */
+        #backgroundVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        /* Hearts Display */
+        .heartsContainer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .heart {
+            font-size: 2.5em;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px #000;
+            transition: opacity 0.3s;
+        }
+
+        .heart.lost {
+            opacity: 0.2;
+            color: #333;
+        }
+
+        /* Timer */
+        .timer {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+            z-index: 100;
+        }
+
+        /* Level Name Display */
+        .levelName {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #000;
+            z-index: 100;
+        }
+
+        /* Game Area */
+        .gameArea {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Player */
+        .player {
+            width: 60px;
+            height: 80px;
+            background: transparent;
+            border: none;
+            position: absolute;
+            bottom: 30px;
+            left: 370px;
+            transition: left 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .player img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Knife */
+        .knife {
+            width: 30px;
+            height: 60px;
+            background: linear-gradient(to bottom, #888, #ccc, #888);
+            border: 2px solid #fff;
+            position: absolute;
+            top: -60px;
+            clip-path: polygon(50% 0%, 40% 30%, 45% 100%, 55% 100%, 60% 30%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 15;
+        }
+
+        /* Victory Card Screen */
+        #victoryCard {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            color: #ffd700;
+            text-align: center;
+            padding: 40px;
+            z-index: 200;
+            position: relative;
+        }
+
+        #victoryCard h2 {
+            font-size: 3em;
+            margin-bottom: 30px;
+            line-height: 1.3;
+            text-shadow: 4px 4px 8px #000;
+        }
+
+        #victoryCard p {
+            font-size: 1.5em;
+            color: #fff;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* Victory Screen */
+        #victoryScreen {
+            display: none;
+            height: 100%;
+            background: #000;
+            position: relative;
+            z-index: 200;
+        }
+
+        #victoryVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .videoOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .videoOverlay h2 {
+            color: #ffd700;
+            font-size: 2.5em;
+            text-shadow: 3px 3px 6px #000;
+            margin-bottom: 10px;
+        }
+
+        .videoOverlay p {
+            color: #fff;
+            font-size: 1.3em;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* Game Over Screen */
+        #gameOverScreen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            padding: 40px;
+            text-align: center;
+            z-index: 200;
+            position: relative;
+        }
+
+        #gameOverScreen h2 {
+            color: #ff0000;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        #gameOverScreen p {
+            color: #fff;
+            font-size: 1.3em;
+            margin-bottom: 30px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Instructions */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 4px #000;
+            z-index: 100;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Title Screen -->
+        <div id="titleScreen">
+            <h1>DODGE DIO'S KNIVES!</h1>
+            <p>DIO HAS FALLEN IN LOVE WITH YOUR BOYFRIEND AND CAPTURED HIM</p>
+            <div class="dialogue"><strong>Dio:</strong> HE IS MINE. AWRYYYYYYYYY</div>
+            <div class="dialogue"><strong>Vania:</strong> NOOO GIVE MY BOYFRIEND BACK TO ME</div>
+            <div class="dialogue"><strong>Dio:</strong> AWRRYYYYYYY. SURVIVE MY LABRYNTH OF FALLING KNIVES IF YOU WISH TO RECLAIM YOUR BOYFRIEND WHILE I SING TO HIMMMMMMMM</div>
+            <button class="btn" onclick="showLevelSelect()">START</button>
+        </div>
+
+        <!-- Story Screen (between levels) -->
+        <div id="storyScreen">
+            <p id="storyText"></p>
+            <button class="btn" onclick="continueFromStory()">CONTINUE</button>
+        </div>
+
+        <!-- Level Select Screen -->
+        <div id="levelSelect">
+            <h2>SELECT LEVEL</h2>
+            <div class="levelGrid">
+                <div class="levelCard" id="level1" onclick="selectLevel(0)">
+                    <div class="levelNumber">1</div>
+                    <h3>BLOODY STREAM</h3>
+                    <div class="levelStatus"></div>
+                </div>
+                <div class="levelCard locked" id="level2" onclick="selectLevel(1)">
+                    <div class="levelNumber">2</div>
+                    <h3>DON'T STOP ME NOW</h3>
+                    <div class="levelStatus"></div>
+                </div>
+                <div class="levelCard locked" id="level3" onclick="selectLevel(2)">
+                    <div class="levelNumber">3</div>
+                    <h3>BAKAMITAI</h3>
+                    <div class="levelStatus"></div>
+                </div>
+                <div class="levelCard locked" id="level4" onclick="selectLevel(3)">
+                    <div class="levelNumber">4</div>
+                    <h3>ALONE AGAIN</h3>
+                    <div class="levelStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen">
+            <!-- Background Music Video - NOW WITH SOUND -->
+            <video id="backgroundVideo">
+                <source src="" type="video/mp4" id="videoSource">
+            </video>
+
+            <div class="levelName" id="currentLevelName">LEVEL 1</div>
+
+            <div class="heartsContainer" id="heartsContainer">
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+                <div class="heart">♥</div>
+            </div>
+            <div class="timer" id="timer">2:00</div>
+            <div class="instructions">Use A/D to move left and right!</div>
+            <div class="gameArea" id="gameArea">
+                <div class="player" id="player">
+                    <img id="playerImage" src="standing.png" alt="Player">
+                </div>
+            </div>
+        </div>
+
+        <!-- Victory Card Screen -->
+        <div id="victoryCard">
+            <h2>🎉 VICTORY! 🎉</h2>
+            <p>hes crying????</p>
+            <p>You beat the disheartened DIO!<br>Now claim your boyfriend!</p>
+            <button class="btn" onclick="playFinalVideo()">CONTINUE</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victoryScreen">
+            <div class="videoOverlay">
+                <h2>💖 YOU SAVED HIM! 💖</h2>
+                <p>DIO has been defeated!</p>
+            </div>
+            <video id="victoryVideo" autoplay controls>
+                <source src="victoryvideo.mp4" type="video/mp4">
+                <source src="victoryvideo.webm" type="video/webm">
+                Your browser doesn't support video.
+            </video>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen">
+            <h2>GAME OVER</h2>
+            <p>DIO's knives were too much...</p>
+            <p>But love never gives up!</p>
+            <button class="btn" onclick="retryLevel()">TRY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- DIO Sound Effects (add as many as you want!) -->
+    <audio id="hit1" src="diosound1.MP3"></audio>
+    <audio id="hit2" src="diosound2.MP3"></audio>
+    <audio id="hit3" src="diosound3.MP3"></audio>
+    <audio id="hit4" src="diosound4.MP3"></audio>
+    <audio id="hit5" src="diosound5.MP3"></audio>
+    <script>
+        // Level configuration
+        const levels = [
+            { name: 'BLOODY STREAM', video: 'bloody_stream.mp4' },
+            { name: "DON'T STOP ME NOW", video: 'dont_stop_me_now.mp4' },
+            { name: 'BAKAMITAI', video: 'Bakamitai(1).mp4' },
+            { name: 'ALONE AGAIN', video: 'alone_again.mp4' }
+        ];
+
+        // Story messages after each level
+        const storyMessages = [
+            "dio seems in high spirits. maybe hes confident youll fail",
+            "he seems tired. youre nearly there",
+            "he seems...sad",
+            "" // No message after level 4, goes straight to victory card
+        ];
+
+        // Progress tracking
+        let progress = {
+            completed: [],
+            currentLevel: null
+        };
+
+        // Load progress from localStorage
+        function loadProgress() {
+            const saved = localStorage.getItem('dioGameProgress');
+            if (saved) {
+                progress = JSON.parse(saved);
+            }
+            updateLevelCards();
+        }
+
+        // Save progress to localStorage
+        function saveProgress() {
+            localStorage.setItem('dioGameProgress', JSON.stringify(progress));
+        }
+
+        // Update level cards based on progress
+        function updateLevelCards() {
+            levels.forEach((level, index) => {
+                const card = document.getElementById(`level${index + 1}`);
+                
+                // Mark completed levels
+                if (progress.completed.includes(index)) {
+                    card.classList.add('completed');
+                    card.classList.remove('locked');
+                }
+                // Unlock next level after completing previous
+                else if (index === 0 || progress.completed.includes(index - 1)) {
+                    card.classList.remove('locked');
+                }
+                // Keep rest locked
+                else {
+                    card.classList.add('locked');
+                }
+            });
+        }
+
+        // Show level select screen
+        function showLevelSelect() {
+            loadProgress();
+            document.getElementById('titleScreen').style.display = 'none';
+            document.getElementById('levelSelect').style.display = 'flex';
+        }
+
+        // Show story screen
+        function showStory(levelIndex) {
+            const message = storyMessages[levelIndex];
+            document.getElementById('storyText').textContent = message;
+            document.getElementById('storyScreen').style.display = 'flex';
+        }
+
+        // Continue from story screen
+        function continueFromStory() {
+            document.getElementById('storyScreen').style.display = 'none';
+            updateLevelCards();
+            document.getElementById('levelSelect').style.display = 'flex';
+        }
+
+        // Select a level
+        function selectLevel(levelIndex) {
+            const card = document.getElementById(`level${levelIndex + 1}`);
+            
+            // Don't allow locked levels
+            if (card.classList.contains('locked')) {
+                return;
+            }
+
+            progress.currentLevel = levelIndex;
+            startGame();
+        }
+
+        // Game State
+        const gameState = {
+            hearts: 10,
+            playerX: 370,
+            playerSpeed: 8,
+            knives: [],
+            knifeSpeed: 4,
+            gameRunning: false,
+            songStartTime: 0,
+            songDuration: 90000, // 1:32 in milliseconds
+            lastKnifeSpawn: 0,
+            knifeSpawnInterval: 300, // ms between knife spawns (2.5 knives/second)
+        };
+
+        // DIO sound effects - add/remove IDs based on how many MP3s you have
+        const dioSounds = ['hit1', 'hit2', 'hit3', 'hit4', 'hit5'];
+
+        const pressedKeys = new Set();
+
+        function startGame() {
+            document.getElementById('levelSelect').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            // Set current level video and name
+            const currentLevel = levels[progress.currentLevel];
+            document.getElementById('videoSource').src = currentLevel.video;
+            document.getElementById('currentLevelName').textContent = currentLevel.name;
+            
+            // Reset game state
+            gameState.hearts = 10;
+            gameState.playerX = 370;
+            gameState.knives = [];
+            gameState.gameRunning = true;
+            gameState.lastKnifeSpawn = 0;
+            
+            // Reset hearts display
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach(heart => heart.classList.remove('lost'));
+            
+            // Clear any existing knives
+            document.querySelectorAll('.knife').forEach(k => k.remove());
+            
+            // Start background video WITH SOUND (volume reduced 50%)
+            const bgVideo = document.getElementById('backgroundVideo');
+            bgVideo.load(); // Reload video with new source
+            bgVideo.currentTime = 0;
+            bgVideo.volume = 0.2; // make the background video 50% quieter
+            bgVideo.play();
+                        // Sync game duration to the background video's duration when available
+            if (!isFinite(bgVideo.duration) || bgVideo.duration === 0) {
+                bgVideo.addEventListener('loadedmetadata', () => {
+                    gameState.songDuration = Math.floor(bgVideo.duration * 1000);
+                }, { once: true });
+            } else {
+                gameState.songDuration = Math.floor(bgVideo.duration * 1000);
+            }
+            // End the game when the video ends (video shouldn't loop)
+            bgVideo.addEventListener('ended', () => {
+                victory();
+            }, { once: true });
+                        gameState.songStartTime = performance.now();
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop(currentTime) {
+            if (!gameState.gameRunning) return;
+            
+            // Update player position
+            updatePlayer();
+            
+            // Spawn knives
+            spawnKnives(currentTime);
+            
+            // Update knives
+            updateKnives();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Update timer
+            updateTimer(currentTime);
+            
+            // Check win condition — prefer video time so timers match the background video
+            const bgVideo = document.getElementById('backgroundVideo');
+            if (bgVideo.duration && !isNaN(bgVideo.duration)) {
+                // If duration is known, rely on the video's currentTime
+                if (bgVideo.currentTime >= bgVideo.duration) {
+                    victory();
+                    return;
+                }
+            } else {
+                // Fallback to previous timing method while metadata loads
+                const elapsed = currentTime - gameState.songStartTime;
+                if (elapsed >= gameState.songDuration) {
+                    victory();
+                    return;
+                }
+            }
+            
+            // Check lose condition
+            if (gameState.hearts <= 0) {
+                gameOver();
+                return;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePlayer() {
+            const player = document.getElementById('player');
+            const playerImage = document.getElementById('playerImage');
+            
+            // Update movement
+            if (pressedKeys.has('a')) {
+                gameState.playerX = Math.max(0, gameState.playerX - gameState.playerSpeed);
+                playerImage.src = 'left.png'; // Walking left animation
+            } else if (pressedKeys.has('d')) {
+                gameState.playerX = Math.min(740, gameState.playerX + gameState.playerSpeed);
+                playerImage.src = 'right.png'; // Walking right animation
+            } else {
+                playerImage.src = 'standing.png'; // Standing still
+            }
+            
+            player.style.left = gameState.playerX + 'px';
+        }
+
+        function spawnKnives(currentTime) {
+            if (currentTime - gameState.lastKnifeSpawn >= gameState.knifeSpawnInterval) {
+                const knife = document.createElement('div');
+                knife.className = 'knife';
+                
+                // Random X position
+                const x = Math.random() * 770; // 800 - 30 (knife width)
+                knife.style.left = x + 'px';
+                
+                document.getElementById('gameArea').appendChild(knife);
+                
+                gameState.knives.push({
+                    element: knife,
+                    x: x,
+                    y: -60
+                });
+                
+                gameState.lastKnifeSpawn = currentTime;
+            }
+        }
+
+        function updateKnives() {
+            gameState.knives = gameState.knives.filter(knife => {
+                knife.y += gameState.knifeSpeed;
+                knife.element.style.top = knife.y + 'px';
+                
+                // Remove if off screen
+                if (knife.y > 600) {
+                    knife.element.remove();
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+
+        function checkCollisions() {
+            const playerWidth = 60;
+            const playerHeight = 80;
+            const playerY = 600 - 30 - 80; // bottom - offset - height
+            
+            gameState.knives.forEach((knife, index) => {
+                const knifeWidth = 30;
+                const knifeHeight = 60;
+                
+                // Simple AABB collision
+                if (knife.x < gameState.playerX + playerWidth &&
+                    knife.x + knifeWidth > gameState.playerX &&
+                    knife.y < playerY + playerHeight &&
+                    knife.y + knifeHeight > playerY) {
+                    
+                    // Collision detected!
+                    loseHeart();
+                    knife.element.remove();
+                    gameState.knives.splice(index, 1);
+                }
+            });
+        }
+
+        function loseHeart() {
+            if (gameState.hearts <= 0) return;
+            
+            gameState.hearts--;
+            
+            // Update hearts display
+            const hearts = document.querySelectorAll('.heart');
+            hearts[gameState.hearts].classList.add('lost');
+            
+            // Play random DIO sound
+            playRandomDioSound();
+            
+            // Visual feedback
+            const player = document.getElementById('player');
+            player.style.opacity = '0.5';
+            setTimeout(() => {
+                player.style.opacity = '1';
+            }, 200);
+        }
+
+        function playRandomDioSound() {
+            // Pick a random sound from the list
+            const randomSound = dioSounds[Math.floor(Math.random() * dioSounds.length)];
+            const audio = document.getElementById(randomSound);
+            
+            // Reset and play
+            audio.currentTime = 0;
+            audio.play();
+        }
+
+        function updateTimer(currentTime) {
+            const bgVideo = document.getElementById('backgroundVideo');
+            let remainingSeconds;
+            if (bgVideo.duration && !isNaN(bgVideo.duration)) {
+                const remaining = Math.max(0, bgVideo.duration - bgVideo.currentTime);
+                remainingSeconds = Math.floor(remaining);
+            } else {
+                // Fallback to previously configured songDuration while metadata loads
+                const elapsed = currentTime - gameState.songStartTime;
+                const remainingMs = Math.max(0, gameState.songDuration - elapsed);
+                remainingSeconds = Math.floor(remainingMs / 1000);
+            }
+            
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function victory() {
+            gameState.gameRunning = false;
+            document.getElementById('backgroundVideo').pause();
+            
+            // Mark current level as completed
+            if (!progress.completed.includes(progress.currentLevel)) {
+                progress.completed.push(progress.currentLevel);
+                saveProgress();
+            }
+
+            document.getElementById('gameScreen').style.display = 'none';
+
+            // Check if all levels are completed
+            if (progress.completed.length === levels.length) {
+                // Show victory card before final video
+                document.getElementById('victoryCard').style.display = 'flex';
+            } else {
+                // Show story message for completed level
+                showStory(progress.currentLevel);
+            }
+        }
+
+        function playFinalVideo() {
+            document.getElementById('victoryCard').style.display = 'none';
+            document.getElementById('victoryScreen').style.display = 'block';
+            
+            // Play victory video
+            const video = document.getElementById('victoryVideo');
+            video.play();
+        }
+
+        function gameOver() {
+            gameState.gameRunning = false;
+            document.getElementById('backgroundVideo').pause();
+            
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function retryLevel() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            startGame(); // Retry current level
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'a' || key === 'd') {
+                pressedKeys.add(key);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'a' || key === 'd') {
+                pressedKeys.delete(key);
+            }
+        });
+    </script>
+</body>
+</html>
