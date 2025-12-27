@@ -524,9 +524,9 @@
                 <h2>💖 YOU SAVED HIM! 💖</h2>
                 <p>DIO has been defeated!</p>
             </div>
-            <video id="victoryVideo" controls preload="none" muted>
-                <source src="victory.mp4" type="video/mp4">
-                <source src="victory.webm" type="video/webm">
+            <video id="victoryVideo" controls preload="none">
+                <source src="victoryvideo.mp4" type="video/mp4">
+                <source src="victoryvideo.webm" type="video/webm">
                 Your browser doesn't support video.
             </video>
         </div>
@@ -551,7 +551,7 @@
         const levels = [
             { name: 'BLOODY STREAM', video: 'bloody_stream.mp4' },
             { name: "DON'T STOP ME NOW", video: 'dont_stop_me_now.mp4' },
-            { name: 'BAKAMITAI', video: 'bakamitai.mp4' },
+            { name: 'BAKAMITAI', video: 'Bakamitai(1).mp4' },
             { name: 'ALONE AGAIN', video: 'alone_again.mp4' }
         ];
 
@@ -644,12 +644,12 @@
             playerX: 370,
             playerSpeed: 8,
             knives: [],
-            knifeSpeed: 3,
+            knifeSpeed: 4,
             gameRunning: false,
             songStartTime: 0,
             songDuration: 90000, // 1:32 in milliseconds
             lastKnifeSpawn: 0,
-            knifeSpawnInterval: 500, // ms between knife spawns (2.5 knives/second)
+            knifeSpawnInterval: 300, // ms between knife spawns (2.5 knives/second)
         };
 
         // DIO sound effects - add/remove IDs based on how many MP3s you have
@@ -903,7 +903,6 @@
             
             // Play victory video
             const video = document.getElementById('victoryVideo');
-            video.muted = false; // Unmute it when we actually want to play
             video.play();
         }
 
